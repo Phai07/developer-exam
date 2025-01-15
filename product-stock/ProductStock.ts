@@ -20,27 +20,38 @@ class InventoryManager {
     this.products = initialProducts;
   }
 
-  public addProduct(product: Product): void {
-    // Bug: ไม่ตรวจสอบว่าสินค้าซ้ำกันหรือไม่
-    this.products.push(product);
+   // Bug: ไม่ตรวจสอบว่าสินค้าซ้ำกันหรือไม่
+   public addProduct(product: Product): void {
+    const existingProductIndex = this.products.findIndex(p => p.id === product.id);
+    if (existingProductIndex !== -1) {
+      // ถ้ามีสินค้าอยู่แล้ว ให้ทำการอัปเดตข้อมูลของสินค้าตัวนั้น
+      this.products[existingProductIndex] = product;
+    } else {
+      this.products.push(product);
+    }
   }
 
   public updateStock(productId: string, newQuantity: number): void {
     const productIndex = this.products.findIndex(p => p.id === productId);
-    if (productIndex !== -1) {
+      // ตรวจสอบว่า newQuantity เป็นจำนวนเต็มบวกหรือไม่
+    if ( productIndex !== -1 && Number.isInteger(newQuantity) && newQuantity > 0 ) {
       // Bug: ไม่ตรวจสอบว่า newQuantity เป็นจำนวนเต็มบวกหรือไม่
       this.products[productIndex].stockQuantity = newQuantity;
+    }else{
+      throw new Error('Invalid quantity or product not found.');
     }
   }
 
   public calculateRevenue(soldQuantity: number, productId: string): number {
     const product = this.getProductById(productId);
     if (!product) return 0;
-
+  // ตรวจสอบว่า soldQuantity ไม่เกิน stockQuantity ของสินค้า
+  if (soldQuantity > product.stockQuantity) {
+    throw new Error('Sold quantity exceeds available stock.');
+  }
     const discountedPrice = product.sellingPrice * (1 - this.getDiscount(product.category));
     const taxAmount = discountedPrice * soldQuantity * this.taxRate;
     const revenue = discountedPrice * soldQuantity + taxAmount;
-
     // Bug: ไม่ตรวจสอบว่า soldQuantity เกิน stockQuantity หรือไม่
     return revenue;
   }
@@ -51,8 +62,9 @@ class InventoryManager {
 
     const discountedPrice = product.sellingPrice * (1 - this.getDiscount(product.category));
     const cost = product.costPrice * soldQuantity;
-    const profit = discountedPrice * soldQuantity - cost;
-
+    // คำนวณภาษีในการคำนวณกำไร
+    const taxAmount = discountedPrice * soldQuantity * this.taxRate;
+    const profit = discountedPrice * soldQuantity - cost - taxAmount;
     // Bug: ไม่คำนวณภาษีในการคำนวณกำไร
     return profit;
   }
@@ -67,10 +79,13 @@ class InventoryManager {
 
   public restock(productId: string, additionalQuantity: number): void {
     const productIndex = this.products.findIndex(p => p.id === productId);
-    if (productIndex !== -1) {
+    //ตรวจสอบว่า additionalQuantity เป็นจำนวนเต็มบว
+    if (productIndex !== -1 && Number.isInteger(additionalQuantity)) {
       // Bug: ไม่ตรวจสอบว่า additionalQuantity เป็นจำนวนเต็มบวกหรือไม่
       this.products[productIndex].stockQuantity += additionalQuantity;
-    }
+    }else {
+      throw new Error(`Product with ID ${productId} not found.`);
+  }
   }
 
   public getLowStockProducts(threshold: number): Product[] {
@@ -85,12 +100,16 @@ const inventory = new InventoryManager([
 ]);
 
 inventory.addProduct({ id: 'P003', name: 'Tablet', costPrice: 250, sellingPrice: 400, stockQuantity: 75, category: 'C' });
+console.log(inventory);
 
-console.log(inventory.calculateRevenue(5, 'P001'));
-console.log(inventory.calculateProfit(5, 'P001'));
+console.log(inventory.calculateRevenue(50, 'P001'));
+ console.log(inventory.calculateProfit(5, 'P001'));
 
-inventory.updateStock('P001', 40);
+inventory.updateStock('P001', 5);
 console.log(inventory.getLowStockProducts(50));
+
 
 inventory.restock('P002', 20);
 console.log(inventory.getLowStockProducts(50));
+
+
