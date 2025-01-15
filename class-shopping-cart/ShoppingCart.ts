@@ -1,4 +1,4 @@
-interface Product {
+ interface Product {
   id: string;
   name: string;
   price: number;
@@ -58,8 +58,8 @@ class ShoppingCart {
 // Usage example
 const cart = new ShoppingCart();
 
-cart.addItem({ id: '1', name: 'Laptop', price: 999.99, quantity: 1 });
-cart.addItem({ id: '2', name: 'T-Shirt', price: 19.99, quantity: 2 });
+cart.addItem({ id: '1', name: 'Laptop', price: 999.99 }, 1);
+cart.addItem({ id: '2', name: 'T-Shirt', price: 19.99 }, 2);
 
 console.log(cart.getCartSummary());
 
